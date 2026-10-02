@@ -1,0 +1,46 @@
+name: sales_analytics
+version: "1.0.0"
+config-version: 2
+profile: sales_analytics
+
+model-paths: ["models"]
+macro-paths: ["macros"]
+test-paths: ["tests"]
+snapshot-paths: ["snapshots"]
+analysis-paths: ["analyses"]
+target-path: target
+clean-targets: [target, dbt_packages]
+
+vars:
+  # Revenue is only recognized for these order statuses.
+  recognized_statuses: ["completed"]
+  active_window_days: 90
+
+models:
+  sales_analytics:
+    +persist_docs:
+      relation: true
+      columns: true
+    staging:
+      +schema: staging
+      +materialized: table
+      +tags: [staging]
+    intermediate:
+      +schema: staging
+      +materialized: table
+      +tags: [intermediate]
+    marts:
+      +schema: marts
+      +materialized: table
+      +tags: [marts]
+      tiering:
+        +tags: [marts, post_tiering]
+
+snapshots:
+  sales_analytics:
+    +target_schema: snapshots
+
+tests:
+  sales_analytics:
+    +store_failures: true
+    +schema: dbt_test_failures

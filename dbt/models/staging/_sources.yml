@@ -1,0 +1,76 @@
+version: 2
+
+sources:
+  - name: raw
+    description: >
+      Landing schema populated by the Airflow extract/load tasks. Append-only for
+      incremental sources (orders, order_items); truncate-and-load for dimensions.
+      Every row carries _batch_id, _loaded_at and _source_file audit columns.
+    schema: raw
+    loaded_at_field: _loaded_at
+    freshness:
+      warn_after: {count: 26, period: hour}
+      error_after: {count: 50, period: hour}
+    meta:
+      owner: data-engineering
+      upstream_system: ERP order management (CSV landing zone)
+    tables:
+      - name: customers
+        description: Business customer master data.
+        columns:
+          - name: customer_id
+            description: Natural key of the customer account.
+            data_tests: [not_null]
+          - name: business_name
+          - name: industry
+          - name: region
+          - name: employee_count
+          - name: signup_date
+          - name: account_manager
+          - name: updated_at
+      - name: products
+        description: Product catalog with list price and standard unit cost.
+        columns:
+          - name: product_id
+            data_tests: [not_null, unique]
+      - name: orders
+        description: Order headers. A new row is appended each time an order changes (e.g. payment).
+        freshness:
+          warn_after: {count: 36, period: hour}
+          error_after: {count: 72, period: hour}
+        loaded_at_field: updated_at
+        columns:
+          - name: order_id
+            data_tests: [not_null]
+      - name: order_items
+        description: Order lines. Append-only, versioned by updated_at.
+        columns:
+          - name: order_item_id
+            data_tests: [not_null]
+
+  - name: tiering
+    description: Outputs of the Python tiering model (sales_pipeline.tiering).
+    schema: tiering
+    meta:
+      owner: analytics
+      produced_by: airflow task run_tiering
+    tables:
+      - name: customer_tiers
+        description: Current composite score, tier and behavioural segment per active customer.
+      - name: customer_tier_history
+        description: Tier assignment per customer per scoring as-of date.
+      - name: segment_profiles
+        description: K-means centroid profile per behavioural segment.
+      - name: tier_weights
+        description: Expert, entropy and applied feature weights for the latest run.
+      - name: validation_metrics
+        description: Long-format statistical validation and ML baseline metrics per run.
+
+  - name: monitoring
+    description: Pipeline observability tables written by sales_pipeline.monitoring and ingestion.
+    schema: monitoring
+    tables:
+      - name: check_results
+        description: Every freshness, volume, schema-drift and Great Expectations check result.
+      - name: load_audit
+        description: One row per source per load batch (rows, watermarks, checksum, duration).

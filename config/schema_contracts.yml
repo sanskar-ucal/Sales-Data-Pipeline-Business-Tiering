@@ -1,0 +1,40 @@
+# Data contracts for raw sources. Types are logical types checked against
+# both the landed files (pandas dtypes) and the warehouse tables.
+# Logical types: string, integer, float, boolean, date, timestamp
+
+customers:
+  customer_id: {type: string, nullable: false}
+  business_name: {type: string, nullable: false}
+  industry: {type: string, nullable: false}
+  region: {type: string, nullable: false}
+  employee_count: {type: integer, nullable: true}
+  signup_date: {type: date, nullable: false}
+  account_manager: {type: string, nullable: true}
+  updated_at: {type: timestamp, nullable: false}
+
+products:
+  product_id: {type: string, nullable: false}
+  product_name: {type: string, nullable: false}
+  category: {type: string, nullable: false}
+  unit_cost: {type: float, nullable: false}
+  list_price: {type: float, nullable: false}
+  updated_at: {type: timestamp, nullable: false}
+
+orders:
+  order_id: {type: string, nullable: false}
+  customer_id: {type: string, nullable: false}
+  order_date: {type: date, nullable: false}
+  status: {type: string, nullable: false}
+  channel: {type: string, nullable: false}
+  discount_pct: {type: float, nullable: false}
+  payment_terms_days: {type: integer, nullable: false}
+  paid_date: {type: date, nullable: true}
+  updated_at: {type: timestamp, nullable: false}
+
+order_items:
+  order_item_id: {type: string, nullable: false}
+  order_id: {type: string, nullable: false}
+  product_id: {type: string, nullable: false}
+  quantity: {type: integer, nullable: false}
+  unit_price: {type: float, nullable: false}
+  updated_at: {type: timestamp, nullable: false}

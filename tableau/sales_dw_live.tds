@@ -1,0 +1,17 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<datasource formatted-name='Sales DW - Customer Tiers (live)' inline='true' version='18.1' xmlns:user='http://www.tableausoftware.com/xml/user'>
+  <connection class='federated'>
+    <named-connections>
+      <named-connection caption='sales_dw' name='postgres.sales_dw'>
+        <connection class='postgres' dbname='sales_dw' odbc-native-protocol='' one-time-sql='' port='5432' server='localhost' sslmode='' authentication='username-password' username='tableau_reader' />
+      </named-connection>
+    </named-connections>
+    <relation connection='postgres.sales_dw' name='mart_customer_tiers' table='[marts].[mart_customer_tiers]' type='table' />
+  </connection>
+  <column caption='Composite Score' datatype='real' name='[composite_score]' role='measure' type='quantitative' />
+  <column caption='Tier' datatype='string' name='[tier]' role='dimension' type='nominal' />
+  <column caption='Tier Rank' datatype='integer' name='[tier_rank]' role='dimension' type='ordinal' />
+  <column caption='Segment' datatype='string' name='[segment]' role='dimension' type='nominal' />
+  <column caption='Revenue (12m)' datatype='real' name='[monetary_12m]' role='measure' type='quantitative' />
+  <column caption='Tier Movement' datatype='string' name='[tier_movement]' role='dimension' type='nominal' />
+</datasource>

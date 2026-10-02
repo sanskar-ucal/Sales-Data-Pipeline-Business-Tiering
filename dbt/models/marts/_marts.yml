@@ -1,0 +1,88 @@
+version: 2
+
+models:
+  - name: fct_orders
+    description: One row per order with revenue, cost, margin and payment behaviour.
+    meta:
+      owner: analytics
+      grain: order_id
+    columns:
+      - name: order_id
+        description: Order natural key.
+        data_tests: [unique, not_null]
+      - name: customer_id
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_customers')
+                field: customer_id
+      - name: net_revenue
+        description: Line amounts net of the order-level discount (booked value, all statuses).
+        data_tests:
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: recognized_revenue
+        description: net_revenue for recognized statuses (var recognized_statuses), else 0.
+      - name: gross_margin_pct
+        description: gross_margin / net_revenue.
+      - name: is_late_payment
+        description: True when paid after due_date (null while unpaid).
+    data_tests:
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "recognized_revenue <= net_revenue + 0.01"
+
+  - name: fct_order_lines
+    description: One row per order line, priced net of discount, with category for breadth features.
+    meta:
+      grain: order_item_id
+    columns:
+      - name: order_item_id
+        data_tests: [unique, not_null]
+
+  - name: fct_customer_monthly
+    description: Customer x month recognized revenue and margin. Feeds trend dashboards.
+    meta:
+      grain: customer_id, month
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [customer_id, month]
+    columns:
+      - name: net_revenue
+        data_tests:
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+
+  - name: dim_customers
+    description: Customer dimension with lifetime value and activity status.
+    meta:
+      grain: customer_id
+    columns:
+      - name: customer_id
+        data_tests: [unique, not_null]
+      - name: lifetime_revenue
+        data_tests:
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: is_active
+        description: Ordered within var active_window_days of the latest order date.
+
+  - name: dim_products
+    description: Product dimension with lifetime units and revenue.
+    columns:
+      - name: product_id
+        data_tests: [unique, not_null]
+
+  - name: mart_data_health
+    description: Latest status and 30-day pass rate of every monitoring and data-quality check.
+    columns:
+      - name: last_severity
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ["pass", "warn", "error"]

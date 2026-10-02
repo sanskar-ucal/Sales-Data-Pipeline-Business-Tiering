@@ -1,0 +1,77 @@
+version: 2
+
+models:
+  - name: stg_customers
+    description: Latest version of each customer, with company size band.
+    columns:
+      - name: customer_id
+        data_tests: [unique, not_null]
+      - name: company_size_band
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ["Unknown", "Small (<50)", "Mid-market (50-249)", "Enterprise (250+)"]
+      - name: region
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ["Northeast", "Southeast", "Midwest", "Southwest", "West"]
+
+  - name: stg_products
+    description: Latest version of each product with list margin.
+    columns:
+      - name: product_id
+        data_tests: [unique, not_null]
+      - name: list_price
+        data_tests:
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+                inclusive: false
+
+  - name: stg_orders
+    description: Latest version of each order (raw is append-only), with due date and payment timing.
+    columns:
+      - name: order_id
+        data_tests: [unique, not_null]
+      - name: customer_id
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_customers')
+                field: customer_id
+      - name: status
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ["completed", "cancelled", "returned"]
+      - name: discount_pct
+        data_tests:
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+                max_value: 0.5
+
+  - name: stg_order_items
+    description: Latest version of each order line.
+    columns:
+      - name: order_item_id
+        data_tests: [unique, not_null]
+      - name: order_id
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('stg_orders')
+                field: order_id
+      - name: product_id
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('stg_products')
+                field: product_id
+      - name: quantity
+        data_tests:
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 1

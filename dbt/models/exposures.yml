@@ -1,0 +1,61 @@
+version: 2
+
+# Tableau dashboards registered as exposures so they appear in dbt lineage (dbt docs).
+exposures:
+  - name: tableau_business_tiering_dashboard
+    label: Business Tiering Overview (Tableau)
+    type: dashboard
+    maturity: high
+    url: https://tableau.example.com/#/views/BusinessTiering/Overview
+    description: >
+      Tier distribution, revenue concentration, tier KPIs, segment profiles and
+      customer drill-down for account managers.
+    depends_on:
+      - ref('mart_customer_tiers')
+      - ref('mart_tier_summary')
+      - source('tiering', 'segment_profiles')
+    owner:
+      name: Analytics
+      email: analytics@example.com
+
+  - name: tableau_tier_migration_dashboard
+    label: Tier Migration (Tableau)
+    type: dashboard
+    maturity: medium
+    url: https://tableau.example.com/#/views/BusinessTiering/Migration
+    description: Upgrades and downgrades between scoring runs; model validation metrics.
+    depends_on:
+      - ref('mart_tier_movement')
+      - source('tiering', 'validation_metrics')
+      - source('tiering', 'tier_weights')
+    owner:
+      name: Analytics
+      email: analytics@example.com
+
+  - name: tableau_sales_performance_dashboard
+    label: Sales Performance (Tableau)
+    type: dashboard
+    maturity: high
+    url: https://tableau.example.com/#/views/SalesPerformance/Overview
+    description: Revenue, margin and order trends by month, region, industry and channel.
+    depends_on:
+      - ref('fct_orders')
+      - ref('fct_customer_monthly')
+      - ref('dim_customers')
+    owner:
+      name: Analytics
+      email: analytics@example.com
+
+  - name: tableau_data_health_dashboard
+    label: Data Health (Tableau)
+    type: dashboard
+    maturity: medium
+    url: https://tableau.example.com/#/views/DataHealth/Overview
+    description: Freshness, volume, schema-drift and Great Expectations results over time.
+    depends_on:
+      - ref('mart_data_health')
+      - source('monitoring', 'check_results')
+      - source('monitoring', 'load_audit')
+    owner:
+      name: Data Engineering
+      email: data-eng@example.com

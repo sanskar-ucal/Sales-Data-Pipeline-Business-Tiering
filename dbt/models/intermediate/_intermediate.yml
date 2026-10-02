@@ -1,0 +1,13 @@
+version: 2
+
+models:
+  - name: int_order_lines
+    description: Order lines joined to order header and product; revenue net of order discount.
+    columns:
+      - name: order_item_id
+        data_tests: [unique, not_null]
+  - name: int_order_totals
+    description: Order-level totals aggregated from int_order_lines.
+    columns:
+      - name: order_id
+        data_tests: [unique, not_null]

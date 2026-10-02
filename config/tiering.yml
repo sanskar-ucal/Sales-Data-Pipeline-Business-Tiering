@@ -1,0 +1,46 @@
+# Business tiering model configuration.
+
+lookback_days: 365          # feature window ending at the as-of date
+horizon_days: 180           # forward window used for backtest labels
+min_orders: 1               # customers need at least this many orders in the lookback window
+
+# Composite score features. direction: +1 = higher is better, -1 = lower is better.
+# transform: log1p | none.  Weights are normalized to sum to 1.
+features:
+  monetary_12m:          {weight: 0.25, direction: 1,  transform: log1p}
+  frequency_12m:         {weight: 0.15, direction: 1,  transform: log1p}
+  recency_days:          {weight: 0.12, direction: -1, transform: none}
+  gross_margin_pct:      {weight: 0.12, direction: 1,  transform: none}
+  revenue_growth:        {weight: 0.12, direction: 1,  transform: none}
+  category_breadth:      {weight: 0.08, direction: 1,  transform: none}
+  active_month_ratio:    {weight: 0.08, direction: 1,  transform: none}
+  late_payment_rate:     {weight: 0.05, direction: -1, transform: none}
+  return_rate:           {weight: 0.03, direction: -1, transform: none}
+
+# config  = use the expert weights above
+# entropy = entropy weight method (data-driven, favors discriminating features)
+# blend   = average of config and entropy weights
+weighting_method: config
+
+normalization: percentile    # percentile | minmax | zscore
+winsorize_quantiles: [0.01, 0.99]
+
+# Tier cut-offs by composite-score percentile (top-down share of customers).
+tiers:
+  - {name: Platinum, share: 0.10}
+  - {name: Gold,     share: 0.20}
+  - {name: Silver,   share: 0.30}
+  - {name: Bronze,   share: 0.40}
+
+segmentation:
+  k_range: [3, 7]
+  random_state: 42
+
+validation:
+  high_value_quantile: 0.80   # label = top 20% forward revenue
+  bootstrap_iterations: 1000
+  cv_folds: 5
+  alpha: 0.05
+  weight_perturbation: 0.20
+  sensitivity_iterations: 200
+  random_state: 42

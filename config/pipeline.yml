@@ -1,0 +1,68 @@
+# Source-to-warehouse ingestion and monitoring configuration.
+
+raw_schema: raw
+monitoring_schema: monitoring
+tiering_schema: tiering
+
+sources:
+  customers:
+    file: customers.csv
+    load_strategy: full_refresh
+    primary_key: customer_id
+    watermark_column: updated_at
+  products:
+    file: products.csv
+    load_strategy: full_refresh
+    primary_key: product_id
+    watermark_column: updated_at
+  orders:
+    file: orders.csv
+    load_strategy: incremental
+    primary_key: order_id
+    watermark_column: updated_at
+  order_items:
+    file: order_items.csv
+    load_strategy: incremental
+    primary_key: order_item_id
+    watermark_column: updated_at
+
+freshness:
+  # How stale the newest business record (watermark column) may be.
+  orders:
+    column: updated_at
+    warn_after_hours: 36
+    error_after_hours: 72
+  order_items:
+    column: updated_at
+    warn_after_hours: 36
+    error_after_hours: 72
+  customers:
+    column: updated_at
+    warn_after_hours: 168
+    error_after_hours: 336
+  # How long since the pipeline last loaded the table at all.
+  load:
+    warn_after_hours: 26
+    error_after_hours: 50
+
+volume:
+  # Compare each batch row count against the trailing history of batches.
+  history_window: 14
+  min_history: 3
+  z_score_warn: 2.5
+  z_score_error: 4.0
+  pct_change_warn: 0.5
+  pct_change_error: 0.9
+  # Incremental loads that land zero rows are flagged.
+  zero_rows_severity: error
+
+schema_drift:
+  # added columns: new columns in source not present in the contract
+  # removed columns / type changes break downstream models
+  on_added_column: warn
+  on_removed_column: error
+  on_type_change: error
+
+alerting:
+  min_severity: warn
+  channels: [log, slack, email]

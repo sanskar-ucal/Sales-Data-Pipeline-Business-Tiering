@@ -1,0 +1,27 @@
+select
+    o.order_id,
+    o.customer_id,
+    o.order_date,
+    o.order_month,
+    o.status,
+    o.channel,
+    o.discount_pct,
+    o.payment_terms_days,
+    o.due_date,
+    o.paid_date,
+    o.is_paid,
+    o.days_to_pay,
+    o.is_late_payment,
+    t.line_count,
+    t.category_count,
+    t.units,
+    t.gross_revenue,
+    t.net_revenue,
+    t.cost,
+    t.gross_margin,
+    {{ safe_divide('t.gross_margin', 't.net_revenue') }}            as gross_margin_pct,
+    case when {{ is_recognized('o.status') }} then t.net_revenue else 0 end   as recognized_revenue,
+    case when {{ is_recognized('o.status') }} then t.gross_margin else 0 end  as recognized_margin,
+    o.updated_at
+from {{ ref('stg_orders') }} o
+join {{ ref('int_order_totals') }} t on t.order_id = o.order_id

@@ -1,0 +1,44 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: pipeline
+          POSTGRES_PASSWORD: pipeline
+          POSTGRES_DB: sales_dw
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U pipeline" --health-interval 5s --health-retries 10
+    env:
+      PG_HOST: localhost
+      PG_PORT: "5432"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install
+        run: |
+          pip install -e ".[dev]"
+          python -m venv /tmp/dbt && /tmp/dbt/bin/pip install -r requirements-dbt.txt
+      - name: Lint
+        run: ruff check src tests airflow
+      - name: Unit + integration tests
+        run: pytest
+      - name: End-to-end pipeline
+        run: |
+          python -m sales_pipeline generate-data --customers 400
+          make run-all PY=python DBT=/tmp/dbt/bin/dbt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: reports
+          path: output/reports/

@@ -1,0 +1,56 @@
+version: 2
+
+models:
+  - name: mart_customer_tiers
+    description: >
+      Published customer tier dataset (Tableau). Composite score (0-100) from
+      weighted, normalized features; tier from score percentile cut-offs; segment
+      from k-means on the same features. See config/tiering.yml.
+    meta:
+      owner: analytics
+      grain: customer_id
+      tableau_datasource: Customer Tiers
+    columns:
+      - name: customer_id
+        data_tests:
+          - unique
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_customers')
+                field: customer_id
+      - name: composite_score
+        description: Weighted sum of percentile-normalized features x 100.
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+                max_value: 100
+      - name: tier
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ["Platinum", "Gold", "Silver", "Bronze"]
+      - name: tier_movement
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ["New", "Upgraded", "Downgraded", "Stable"]
+      - name: segment
+        description: Behavioural segment label (k-means, k chosen by silhouette).
+        data_tests: [not_null]
+
+  - name: mart_tier_summary
+    description: Tier-level KPIs (customers, revenue share, margin, growth, movement).
+    columns:
+      - name: tier
+        data_tests: [unique, not_null]
+
+  - name: mart_tier_movement
+    description: Count of customers moving between tiers across consecutive scoring runs.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [as_of_date, from_tier, to_tier]
